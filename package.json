@@ -1,0 +1,26 @@
+{
+  "name": "truediff",
+  "version": "0.1.2",
+  "private": true,
+  "license": "MIT",
+  "description": "See the real size of a GitHub pull request, without the tests, and mark the noise as viewed in one click.",
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "watch": "node scripts/build.mjs --watch",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "check": "npm run typecheck && npm test && npm run build",
+    "zip": "npm run build && node scripts/zip.mjs",
+    "icons": "node scripts/make-icons.mjs",
+    "e2e": "node scripts/e2e.mjs",
+    "smoke": "GITHUB_TOKEN=$(gh auth token) bun scripts/smoke.ts"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.3.7",
+    "esbuild": "^0.28.2",
+    "playwright": "^1.58.2",
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.12"
+  }
+}

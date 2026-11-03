@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>TrueDiff settings</title>
+    <link rel="stylesheet" href="options.css" />
+  </head>
+  <body>
+    <main>
+      <header class="hero">
+        <img src="icons/icon-48.png" width="40" height="40" alt="" />
+        <div>
+          <h1>TrueDiff</h1>
+          <p>See the real size of a pull request without the tests, and mark the noise as viewed in one click.</p>
+        </div>
+      </header>
+
+      <section id="token-section">
+        <h2>1. Connect GitHub</h2>
+        <p class="muted">
+          TrueDiff reads PR file lists and marks files as viewed through the GitHub API, using your own token. The token stays
+          on this computer (Chrome's extension storage, which github.com pages can't read) and is only ever sent to
+          <code>api.github.com</code>. The only thing TrueDiff ever changes on GitHub is the “Viewed” tick on files.
+        </p>
+
+        <div class="token-row">
+          <input id="token" type="password" autocomplete="off" spellcheck="false" placeholder="ghp_… or github_pat_…" aria-label="GitHub token" />
+          <button id="token-save" class="btn btn-primary" type="button">Save &amp; test</button>
+          <button id="token-clear" class="btn" type="button">Remove</button>
+        </div>
+        <p id="token-status" class="status" role="status"></p>
+
+        <details class="howto" id="token-howto">
+          <summary>How do I create a token?</summary>
+          <div class="howto-grid">
+            <div>
+              <h3>Safest: fine-grained token</h3>
+              <ol>
+                <li><a target="_blank" rel="noopener noreferrer" href="https://github.com/settings/personal-access-tokens/new?name=TrueDiff&amp;description=PR%20review%20helper%20(TrueDiff)&amp;expires_in=90&amp;pull_requests=write">Create a fine-grained token</a>. It expires in 90 days and can only touch pull requests.</li>
+                <li><b>Resource owner</b>: your organization. <b>Repository access</b>: All repositories (or just the ones you review).</li>
+                <li><b>Permissions → Pull requests</b>: Read and write (marking a file viewed is a write). Leave everything else off.</li>
+                <li>Some orgs must approve fine-grained tokens first. Until then the token can only read public repos.</li>
+              </ol>
+            </div>
+            <div>
+              <h3>If fine-grained doesn’t work: classic token</h3>
+              <ol>
+                <li><a id="classic-link" target="_blank" rel="noopener noreferrer" href="https://github.com/settings/tokens/new?scopes=repo&amp;description=TrueDiff%20(PR%20review%20helper)">Create a classic token</a> with only the <code>repo</code> scope (pre-selected). Tick nothing else.</li>
+                <li>Pick an expiry (90 days is sensible), click <b>Generate token</b> and paste it above.</li>
+                <li>If your org uses single sign-on: on the <a target="_blank" rel="noopener noreferrer" href="https://github.com/settings/tokens">tokens page</a> click <b>Configure SSO</b> → <b>Authorize</b> next to your org.</li>
+                <li>Note: <code>repo</code> is broad (it could also push code), so keep this token for TrueDiff only.</li>
+              </ol>
+            </div>
+          </div>
+        </details>
+      </section>
+
+      <section>
+        <h2>2. What counts as noise</h2>
+        <p class="muted">Noise is left out of the real size, and it's what the <b>Mark noise files viewed</b> button marks.</p>
+        <div id="categories" class="categories"></div>
+
+        <div class="patterns">
+          <label>
+            <span class="label">Also treat as noise</span>
+            <span class="hint">One pattern per line, e.g. <code>smoke_checks/</code> or <code>*.stories.tsx</code></span>
+            <textarea id="custom-noise" rows="4" spellcheck="false" placeholder="smoke_checks/&#10;*.stories.tsx"></textarea>
+          </label>
+          <label>
+            <span class="label">Always review (never noise)</span>
+            <span class="hint">Wins over everything above, e.g. <code>test_case_validation.py</code></span>
+            <textarea id="always-review" rows="4" spellcheck="false" placeholder="grading/test_case_validation.py&#10;e2e/helpers/auth.ts"></textarea>
+          </label>
+        </div>
+
+        <details class="syntax">
+          <summary>Pattern syntax</summary>
+          <ul>
+            <li><code>tests/</code>: a trailing slash means "everything inside any folder called tests".</li>
+            <li><code>*.test.*</code>: no slash means "any file with this name, in any folder".</li>
+            <li><code>src/legacy/**/*.js</code>: <code>*</code> stays inside one folder, <code>**</code> crosses folders.</li>
+            <li><code>/scripts/</code>: a leading slash anchors the pattern to the repo root.</li>
+            <li><code>{a,b}</code> means either, <code>?</code> one character, <code>[0-9]</code> a character range. Matching is case-sensitive.</li>
+            <li>Lines starting with <code>#</code> are comments.</li>
+          </ul>
+        </details>
+
+        <div class="tester">
+          <label for="test-path" class="label">Try a path</label>
+          <div class="tester-row">
+            <input id="test-path" type="text" spellcheck="false" placeholder="app/tests/test_forms.py" />
+            <span id="test-result" class="pill"></span>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2>3. Behaviour</h2>
+        <label class="check">
+          <input id="auto-mark" type="checkbox" />
+          <span>
+            <span class="label">Auto-mark noise files viewed when I open “Files changed”</span>
+            <span class="hint">Skips your own PRs. Runs once per push, so a test file you unmark to read stays unmarked until the author pushes again.</span>
+          </span>
+        </label>
+        <label class="check">
+          <input id="list-badges" type="checkbox" />
+          <span>
+            <span class="label">Show the real size in pull request lists</span>
+            <span class="hint">Adds a size badge next to each PR on repo PR lists, your review requests and search results.</span>
+          </span>
+        </label>
+      </section>
+
+      <footer>
+        <span id="saved" class="saved" aria-live="polite"></span>
+        <button id="reset" class="btn btn-link" type="button">Reset noise settings to defaults</button>
+      </footer>
+    </main>
+    <script src="options.js"></script>
+  </body>
+</html>
