@@ -1,5 +1,7 @@
 # TrueDiff
 
+[![CI](https://github.com/DipeshRajoria007/truediff/actions/workflows/ci.yml/badge.svg)](https://github.com/DipeshRajoria007/truediff/actions/workflows/ci.yml)
+
 **The real size of a GitHub pull request, without the tests.**
 
 A PR that says *29 files, +2,055* often has 17 files and +407 lines of code you actually review. The rest is
@@ -43,7 +45,7 @@ Add files like that to **Always review**.
 
 ## Install
 
-### From a release zip (for reviewers)
+### From a release zip
 
 1. Download `truediff-<version>.zip` from the [latest release](https://github.com/DipeshRajoria007/truediff/releases/latest) and unzip it somewhere permanent (Chrome loads it from that folder).
 2. Open `chrome://extensions`, turn on **Developer mode** (top right), click **Load unpacked** and pick the unzipped folder.
@@ -56,21 +58,22 @@ Built for Chrome 110+. Other Chromium browsers (Edge, Brave, Arc) should work th
 TrueDiff talks to the GitHub API with your own token. Make one just for TrueDiff, as narrow as possible, with an expiry:
 
 - **Fine-grained token (recommended):** [create one](https://github.com/settings/personal-access-tokens/new?name=TrueDiff&description=PR%20review%20helper%20(TrueDiff)&expires_in=90&pull_requests=write)
-  (the link pre-fills a 90-day expiry and **Pull requests: Read and write**). Set the resource owner to the org and
-  pick the repos you review. The org may need to approve it; until then it can only read public repos.
+  (the link pre-fills a 90-day expiry and **Pull requests: Read and write**). Set the resource owner to the account or
+  organization that owns the repos you review, and pick those repos. An organization may need to approve the token
+  first; until then it can only read public repos.
   Not yet tried end to end: if it can count but not mark, the PR strip shows GitHub's error, and the classic token below works.
 - **Classic token:** [create one](https://github.com/settings/tokens/new?scopes=repo&description=TrueDiff%20(PR%20review%20helper))
   with only the `repo` scope and an expiry. `repo` is broad (it could push code), so don't reuse a token you have for
-  other tools; the settings page warns if your token has more scopes than TrueDiff needs. If the org uses SSO,
-  click **Configure SSO → Authorize** next to the org on the tokens page.
+  other tools; the settings page warns if your token has more scopes than TrueDiff needs. If an organization uses
+  SSO, click **Configure SSO → Authorize** next to it on the tokens page.
 
-## Rolling it out to the team
+### Using it across a company
 
-- **Easiest today:** point people at the [release zip](https://github.com/DipeshRajoria007/truediff/releases/latest)
-  (or run `npm run zip` and share your own build). Everyone loads it unpacked. Downside: no auto-updates, and Chrome shows a "developer mode extensions" notice.
-- **Better:** publish it on the Chrome Web Store as a **Private** item visible only to your Google
-  Workspace domain. People install it like any extension and get updates automatically.
-  It needs a one-time Chrome Web Store developer registration and a store review.
+TrueDiff isn't on the Chrome Web Store yet, so everyone loads the [release zip](https://github.com/DipeshRajoria007/truediff/releases/latest)
+unpacked. That means no automatic updates, and Chrome shows a "developer mode extensions" notice. If your company uses
+Google Workspace, an admin can publish a build as a **Private** Chrome Web Store item for your domain (it needs a
+Chrome Web Store developer account and a store review). People then install it like any extension and get updates
+automatically.
 
 ## Security & privacy
 
@@ -94,7 +97,9 @@ TrueDiff talks to the GitHub API with your own token. Make one just for TrueDiff
 - `npm test` and `npm run e2e` include checks for all of the above (e.g. the e2e run tries to read the token from
   inside the GitHub tab and to fake clicks on "Mark").
 
-One thing to keep in mind as a team: whatever counts as noise gets less attention, and some "noise" still runs. Test
+Found a security problem? Please report it privately, not in a public issue: see [SECURITY.md](SECURITY.md).
+
+One thing to keep in mind: whatever counts as noise gets less attention, and some "noise" still runs. Test
 config such as `conftest.py` or `jest.config.*` runs in CI, and a lockfile change can swap a dependency. If that matters
 for a repo, add those paths to **Always review** (e.g. `package-lock.json`, `conftest.py`).
 
@@ -122,24 +127,31 @@ src/options/      settings page logic (HTML/CSS in public/)
 src/shared/       glob matcher, noise categories, settings, summary math, URL parsing
 ```
 
-**When GitHub changes its HTML:** the strip anchors under `nav[aria-label="Pull request navigation"]` (new UI)
-or `nav[aria-label="Pull request tabs"]` (classic files view); if neither exists it floats in the bottom-right
+**When GitHub changes its HTML:** the strip goes under the PR tab bar. TrueDiff looks for it by the labels GitHub
+has used (`Pull request` on the 2026 PR page, `Pull request navigation` on the 2025 one, `Pull request tabs` on the
+classic files view), then by its links (the nav that links to this PR's Commits and Files/Checks tabs). When the tabs
+sit in a centred header, the strip takes the header's width. If no tab bar is found, it floats in the bottom-right
 corner instead of disappearing. List badges key off `a[data-testid="listitem-title-link"]` and
 `.search-title a`. `npm run e2e` checks all of these against live GitHub.
 
 ## Roadmap
 
-**v0.2: make it a team tool**
+**Next**
 - Shared per-repo config (e.g. `.github/truediff.yml`) so a repo can declare its own noise patterns for everyone.
 - "Hide instead of mark": collapse noise in the file tree without touching viewed state.
-- Chrome Web Store private listing for the org (auto-updates).
+- A Chrome Web Store listing, for one-click installs and automatic updates.
 
 **Later**
 - Sort or filter PR lists by real size; a "smallest first" review queue.
 - "Look here first": flag risky real files (migrations, settings, auth, payments) at the top of the strip.
 - Respect `linguist-generated` in `.gitattributes` for generated files.
 - Firefox build.
-- GitHub OAuth (device flow) instead of personal tokens, once the org is happy to approve an OAuth app.
+- GitHub OAuth (device flow) instead of personal tokens.
+
+## Contributing
+
+Bug reports, noise patterns for more languages and fixes for GitHub UI changes are all welcome. See
+[CONTRIBUTING.md](CONTRIBUTING.md) for how to build, test and send a pull request.
 
 ## License
 

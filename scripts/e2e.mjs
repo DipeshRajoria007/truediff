@@ -3,7 +3,7 @@
 //   npm run e2e            # light theme
 //   npm run e2e -- dark    # dark theme
 //
-// github.com pages are real (viewed logged out, using public facebook/react PRs), so this catches
+// github.com pages are real (viewed logged out, using public react/react PRs), so this catches
 // GitHub layout changes. The GitHub API is mocked inside the extension's service worker, so no token
 // is needed and nothing on GitHub is modified. Screenshots land in e2e-artifacts/.
 // First run: `npx playwright install chromium`.
@@ -181,6 +181,33 @@ try {
   const viewedCount = await sw.evaluate(() => Object.values(globalThis.__tdViewed).filter((v) => v === 'VIEWED').length);
   check('marking calls the API for exactly the noise files', viewedCount === NOISE_FILES, `${viewedCount} marked`);
   await page.screenshot({ path: shot('pr-marked'), clip: { x: 0, y: 0, width: 1360, height: 420 } });
+
+  // 2b. GitHub's 2026 PR page renames the tab bar to "Pull request" and centres the header in a fixed-width
+  // column. Logged-out pages still get the 2025 layout, so turn this one into the 2026 layout in place, knock
+  // the strip out of the page, and check TrueDiff puts it back under the tabs at the header's width.
+  const relocate = (label, maxWidth) =>
+    page.evaluate(
+      async ([label, maxWidth]) => {
+        const header = document.querySelector('[data-component="PageHeader"]');
+        const nav = header?.querySelector('nav[aria-label]');
+        if (!nav) return { error: 'no PageHeader nav' };
+        nav.setAttribute('aria-label', label);
+        header.style.maxWidth = maxWidth;
+        header.style.marginInline = 'auto';
+        document.body.appendChild(document.querySelector('[data-truediff="strip"]'));
+        await new Promise((r) => setTimeout(r, 1000));
+        const strip = document.querySelector('[data-truediff="strip"]');
+        const h = header.getBoundingClientRect();
+        const s = strip.getBoundingClientRect();
+        return { under: header.nextElementSibling === strip, left: Math.round(s.left - h.left), width: Math.round(s.width - h.width) };
+      },
+      [label, maxWidth],
+    );
+  const renamed = await relocate('Pull request', '900px');
+  check('strip finds the renamed tab bar (2026 PR page)', renamed.under === true, JSON.stringify(renamed));
+  check('strip lines up with a centred header', renamed.left === 0 && renamed.width === 0, JSON.stringify(renamed));
+  const unknown = await relocate('Some future label', 'none');
+  check('strip finds the tab bar by its links if GitHub renames it again', unknown.under === true, JSON.stringify(unknown));
 
   // 3. Files tab with auto-mark: marks, reloads, shows a confirmation.
   await sw.evaluate(() => (globalThis.__tdViewed = {}));

@@ -1,8 +1,16 @@
 {
   "name": "truediff",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "private": true,
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DipeshRajoria007/truediff.git"
+  },
+  "bugs": {
+    "url": "https://github.com/DipeshRajoria007/truediff/issues"
+  },
+  "homepage": "https://github.com/DipeshRajoria007/truediff#readme",
   "description": "See the real size of a GitHub pull request, without the tests, and mark the noise as viewed in one click.",
   "type": "module",
   "scripts": {

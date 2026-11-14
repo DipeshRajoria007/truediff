@@ -1,6 +1,6 @@
 import type { ApiErrorInfo, PrDetails } from '../background/github';
 import { CATEGORIES, CATEGORY_LABELS, type Classifier, type NoiseKind } from '../shared/categories';
-import { prKey, type PrLocation } from '../shared/github-url';
+import { prKey, type PrLocation, type PrRef } from '../shared/github-url';
 import { RequestError, send } from '../shared/messages';
 import type { Settings } from '../shared/settings';
 import { formatCount, plural, summarize, type NoiseFile, type PrSummary, type ViewedState } from '../shared/summary';
@@ -92,7 +92,7 @@ export class PrPage {
   /** Keeps the strip in the page. Called on every (debounced) DOM mutation. */
   sync(): void {
     if (this.disposed) return;
-    const anchor = findAnchor();
+    const anchor = findAnchor(this.loc);
     if (anchor) {
       const { el, where } = anchor;
       const placed = where === 'afterend' ? el.nextElementSibling === this.root : el.lastElementChild === this.root;
@@ -100,11 +100,26 @@ export class PrPage {
         this.root.classList.remove('td-floating');
         el.insertAdjacentElement(where, this.root);
       }
+      this.matchWidth(anchor.header);
     } else if (!this.root.isConnected && Date.now() - this.startedAt > FLOAT_GRACE_MS) {
       // Unknown GitHub layout: float in the corner rather than not showing up at all.
+      this.matchWidth(null);
       this.root.classList.add('td-floating');
       document.body.appendChild(this.root);
     }
+  }
+
+  /**
+   * The 2026 PR page centres its header in a fixed-width column (1372px on wide screens). Give the strip the
+   * same width so it lines up with the tabs instead of running across the whole window.
+   */
+  private matchWidth(header: Element | null): void {
+    const max = header ? getComputedStyle(header).maxWidth : 'none';
+    const value = max && max !== 'none' ? max : '';
+    if (this.root.style.maxWidth === value) return;
+    this.root.style.maxWidth = value;
+    this.root.style.marginLeft = value ? 'auto' : '';
+    this.root.style.marginRight = value ? 'auto' : '';
   }
 
   // ---------------------------------------------------------------------------
@@ -414,16 +429,39 @@ function stateTitle(state: ViewedState | undefined): string {
   return 'Not viewed';
 }
 
-/** Where the strip goes: right under the PR header/tabs, in both the new and classic GitHub UIs. */
-function findAnchor(): { el: Element; where: InsertPosition } | null {
-  // New React UI (2025+): <nav aria-label="Pull request navigation"> inside a Primer PageHeader.
-  const nav = document.querySelector('nav[aria-label="Pull request navigation"]');
-  if (nav) return { el: nav.closest('[data-component="PageHeader"]') ?? nav, where: 'afterend' };
-  // Classic UI (still used for "Files changed" when you opt out of the new view, and when logged out):
-  // <nav class="tabnav-tabs" aria-label="Pull request tabs"> in a wrapper row that also holds the diffstat.
-  const classic =
-    document.querySelector('nav[aria-label="Pull request tabs"]') ??
-    document.querySelector('a.tabnav-tab[href*="/pull/"][href$="/commits"]')?.closest('nav');
-  if (classic) return { el: classic.closest('.tabnav') ?? classic.parentElement ?? classic, where: 'afterend' };
+/**
+ * Labels GitHub has given the PR tab bar (Overview/Conversation, Commits, Checks, Files changed):
+ * "Pull request" on the 2026 PR page, "Pull request navigation" on the 2025 React page, and
+ * "Pull request tabs" on the classic files view. GitHub renames it between versions, so findTabNav()
+ * also recognises it by its links.
+ */
+const TAB_NAV_LABELS = ['Pull request', 'Pull request navigation', 'Pull request tabs'];
+const TAB_PATHS = ['files', 'changes', 'checks'];
+
+function findTabNav(pr: PrRef): Element | null {
+  for (const label of TAB_NAV_LABELS) {
+    const nav = document.querySelector(`nav[aria-label="${label}"]`);
+    if (nav) return nav;
+  }
+  // A label we haven't seen: the nav that links to this PR's Commits tab and its Files or Checks tab.
+  const base = `/${pr.owner}/${pr.repo}/pull/${pr.number}/`.toLowerCase();
+  for (const nav of document.querySelectorAll('nav')) {
+    const tabs = [...nav.querySelectorAll<HTMLAnchorElement>('a[href*="/pull/"]')]
+      .map((a) => a.pathname.toLowerCase().replace(/\/$/, ''))
+      .filter((p) => p.startsWith(base))
+      .map((p) => p.slice(base.length));
+    if (tabs.includes('commits') && tabs.some((t) => TAB_PATHS.includes(t))) return nav;
+  }
   return null;
+}
+
+/** Where the strip goes: right under the PR header and tabs, in every GitHub PR layout. */
+function findAnchor(pr: PrRef): { el: Element; where: InsertPosition; header: Element | null } | null {
+  const nav = findTabNav(pr);
+  if (!nav) return null;
+  // React PR pages (2025 and 2026): the tabs sit inside a Primer PageHeader; go right under the whole header.
+  const header = nav.closest('[data-component="PageHeader"]');
+  if (header) return { el: header, where: 'afterend', header };
+  // Classic files view: <nav class="tabnav-tabs"> in a .tabnav row that also holds the diffstat.
+  return { el: nav.closest('.tabnav') ?? nav.parentElement ?? nav, where: 'afterend', header: null };
 }
