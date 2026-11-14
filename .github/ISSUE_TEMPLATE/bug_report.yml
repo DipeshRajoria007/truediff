@@ -1,0 +1,59 @@
+name: Bug report
+description: TrueDiff shows the wrong thing, shows nothing, or breaks a GitHub page.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting! For a **security** problem, please don't use this form: see [SECURITY.md](https://github.com/DipeshRajoria007/truediff/blob/main/SECURITY.md).
+  - type: dropdown
+    id: page
+    attributes:
+      label: Where does it happen?
+      options:
+        - A PR's Overview / Conversation tab
+        - A PR's Files changed tab
+        - A PR's Commits or Checks tab
+        - A repo's pull request list
+        - The pull requests dashboard (review requests, authored by me…)
+        - PR search results
+        - TrueDiff's settings page
+        - Somewhere else
+    validations:
+      required: true
+  - type: dropdown
+    id: preview
+    attributes:
+      label: Does the PR title have a "Preview" badge next to it?
+      description: GitHub is rolling out a new PR page with a "Preview" badge beside the title. TrueDiff handles both, but they break in different ways.
+      options:
+        - "Yes"
+        - "No"
+        - Not sure / not a PR page
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened, and what did you expect?
+      description: If a file was counted wrong (noise vs real code), include its path.
+    validations:
+      required: true
+  - type: textarea
+    id: screenshot
+    attributes:
+      label: Screenshot
+      description: Drag an image here. Blur out anything private.
+  - type: input
+    id: version
+    attributes:
+      label: TrueDiff version
+      description: Shown on the extension's card in chrome://extensions.
+      placeholder: "0.1.3"
+    validations:
+      required: true
+  - type: input
+    id: browser
+    attributes:
+      label: Browser and version
+      placeholder: Chrome 142
