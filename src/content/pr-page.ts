@@ -4,7 +4,7 @@ import { prKey, type PrLocation, type PrRef } from '../shared/github-url';
 import { RequestError, send } from '../shared/messages';
 import type { Settings } from '../shared/settings';
 import { formatCount, plural, summarize, type NoiseFile, type PrSummary, type ViewedState } from '../shared/summary';
-import { debounce, h, hasUnsavedText, icon, userClick } from './dom';
+import { brandMark, debounce, h, hasUnsavedText, icon, userClick } from './dom';
 import { injectStyles } from './styles';
 
 export interface PageContext {
@@ -260,7 +260,7 @@ export class PrPage {
   }
 
   private renderBody(): Node[] {
-    const brand = h('span', { className: 'td-brand', title: 'TrueDiff: the real size of this PR, without tests and other noise' }, icon('filter'), 'TrueDiff');
+    const brand = h('span', { className: 'td-brand', title: 'TrueDiff: the real size of this PR, without tests and other noise' }, brandMark(), 'TrueDiff');
     const s = this.state;
 
     if (s.kind === 'no-token') {
