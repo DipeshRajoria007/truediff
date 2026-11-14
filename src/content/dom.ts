@@ -40,7 +40,6 @@ const ICONS = {
   check: 'M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z',
   eye: 'M8 2c1.981 0 3.671.992 4.933 2.078 1.27 1.091 2.187 2.345 2.637 3.023a1.62 1.62 0 0 1 0 1.798c-.45.678-1.367 1.932-2.637 3.023C11.67 13.008 9.981 14 8 14c-1.981 0-3.671-.992-4.933-2.078C1.797 10.83.88 9.576.43 8.898a1.62 1.62 0 0 1 0-1.798c.45-.677 1.367-1.931 2.637-3.022C4.33 2.992 6.019 2 8 2ZM1.679 7.932a.12.12 0 0 0 0 .136c.411.622 1.241 1.75 2.366 2.717C5.176 11.758 6.527 12.5 8 12.5c1.473 0 2.825-.742 3.955-1.715 1.124-.967 1.954-2.096 2.366-2.717a.12.12 0 0 0 0-.136c-.412-.621-1.242-1.75-2.366-2.717C10.824 4.242 9.473 3.5 8 3.5c-1.473 0-2.825.742-3.955 1.715-1.124.967-1.954 2.096-2.366 2.717ZM8 10a2 2 0 1 1-.001-3.999A2 2 0 0 1 8 10Z',
   triangleDown: 'm4.427 7.427 3.396 3.396a.25.25 0 0 0 .354 0l3.396-3.396A.25.25 0 0 0 11.396 7H4.604a.25.25 0 0 0-.177.427Z',
-  filter: 'M.75 3h14.5a.75.75 0 0 1 0 1.5H.75a.75.75 0 0 1 0-1.5ZM3 7.75A.75.75 0 0 1 3.75 7h8.5a.75.75 0 0 1 0 1.5h-8.5A.75.75 0 0 1 3 7.75Zm3 4a.75.75 0 0 1 .75-.75h2.5a.75.75 0 0 1 0 1.5h-2.5a.75.75 0 0 1-.75-.75Z',
 } as const;
 
 export function icon(name: keyof typeof ICONS, className = ''): SVGSVGElement {
@@ -54,6 +53,34 @@ export function icon(name: keyof typeof ICONS, className = ''): SVGSVGElement {
   const path = document.createElementNS(SVG_NS, 'path');
   path.setAttribute('d', ICONS[name]);
   svg.appendChild(path);
+  return svg;
+}
+
+/** TrueDiff's mark ("the pull-request pair", docs/brand/mark.svg) in one colour, sized like an octicon. */
+const MARK_PARTS: [d: string, attrs: Record<string, string>][] = [
+  ['M26 38v27', { stroke: 'currentColor', 'stroke-width': '9' }],
+  [
+    'M26 9a16 16 0 1 1 0 32 16 16 0 0 1 0-32ZM22 15v6h-6v8h6v6h8v-6h6v-8h-6v-6ZM26 64a12 12 0 1 1 0 24 12 12 0 0 1 0-24Zm0 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10Z',
+    { fill: 'currentColor', 'fill-rule': 'evenodd' },
+  ],
+  ['M53 25h5c11 0 17 7 17 18v17M57 16l-9 9 9 9', { stroke: 'currentColor', 'stroke-width': '8', 'stroke-linejoin': 'round' }],
+  ['M75 59a16 16 0 1 1 0 32 16 16 0 0 1 0-32Zm-10 12v8h20v-8Z', { fill: 'currentColor', 'fill-rule': 'evenodd' }],
+];
+
+export function brandMark(className = ''): SVGSVGElement {
+  const svg = document.createElementNS(SVG_NS, 'svg');
+  svg.setAttribute('viewBox', '8 7 85 86');
+  svg.setAttribute('width', '16');
+  svg.setAttribute('height', '16');
+  svg.setAttribute('fill', 'none');
+  svg.setAttribute('aria-hidden', 'true');
+  if (className) svg.setAttribute('class', className);
+  for (const [d, attrs] of MARK_PARTS) {
+    const path = document.createElementNS(SVG_NS, 'path');
+    path.setAttribute('d', d);
+    for (const [k, v] of Object.entries(attrs)) path.setAttribute(k, v);
+    svg.appendChild(path);
+  }
   return svg;
 }
 
