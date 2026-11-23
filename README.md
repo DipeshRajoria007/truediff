@@ -52,9 +52,13 @@ Add files like that to **Always review**.
 
 ### From a release zip
 
-1. Download `truediff-<version>.zip` from the [latest release](https://github.com/DipeshRajoria007/truediff/releases/latest) and unzip it somewhere permanent (Chrome loads it from that folder).
+1. Download `truediff-<version>.zip` from **Assets** on the [latest release](https://github.com/DipeshRajoria007/truediff/releases/latest) and unzip it somewhere permanent (Chrome loads it from that folder).
 2. Open `chrome://extensions`, turn on **Developer mode** (top right), click **Load unpacked** and pick the unzipped folder.
 3. The settings page opens. Add a token (below) and open any PR.
+
+Use the zip under **Assets** on the release page, not GitHub's green **Code → Download ZIP** button. That one is the
+source code (a `truediff-main` folder) and isn't built yet, so Chrome refuses it with *Could not load JavaScript
+'content.js' for script*. To run from source, build it first (see [Development](#development)) and load `dist/`.
 
 Built for Chrome 110+. Other Chromium browsers (Edge, Brave, Arc) should work the same way but haven't been tried yet.
 
